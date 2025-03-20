@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualiseur 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            z-index: 1;
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(1px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 998;
+        }
+        #mainTitle {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: 'Times New Roman', serif;
+            font-size: 4em;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+            z-index: 1000;
+            opacity: 0;
+            animation: fadeIn 2s ease-in forwards;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px 40px;
+            border-radius: 10px;
+            backdrop-filter: blur(1px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #mainTitle:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        #mainTitle:hover ~ #overlay {
+            opacity: 1;
+        }
+        #scrollArrow {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        #scrollArrow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 30px;
+            background: white;
+        }
+        #scrollArrow::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid white;
+            border-bottom: 2px solid white;
+            transform: translateX(-50%) rotate(45deg);
+        }
+        #scrollArrowBackground {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 999;
+        }
+        #mainTitle:hover ~ #scrollArrow {
+            animation: bounce 2s infinite;
+        }
+        #mainTitle:hover ~ #scrollArrowBackground {
+            animation: pulse 2s infinite;
+        }
+        .model-hidden {
+            opacity: 0 !important;
+            transition: opacity 0.5s ease;
+        }
+        #menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 0;
+            display: none;
+            z-index: 1001;
+            backdrop-filter: blur(5px);
+        }
+        #menu.active {
+            display: block;
+            animation: slideDown 0.3s ease forwards;
+        }
+        .menu-tabs {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .menu-tab {
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            min-width: 150px;
+        }
+        .menu-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, 0) scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translate(-50%, 0) scale(1.2);
+                opacity: 0.5;
+            }
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                transform: translateX(-50%) translateY(10px);
+            }
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay"></div>
+    <div id="mainTitle">
+        Mystériales<br>de Redon
+    </div>
+    <div id="scrollArrowBackground"></div>
+    <div id="scrollArrow" onclick="toggleMenu()"></div>
+
+    <div id="menu">
+        <div class="menu-tabs">
+            <button class="menu-tab">Auteurs</button>
+            <button class="menu-tab">Exposants</button>
+            <button class="menu-tab">Agenda</button>
+            <button class="menu-tab">Pratique</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            const canvas = document.querySelector('canvas');
+            menu.classList.toggle('active');
+            canvas.classList.add('model-hidden');
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script type="module" src="script_animation.js"></script>
+</body>
+</html> 

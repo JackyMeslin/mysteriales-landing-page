@@ -135,15 +135,44 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Gestion des événements de la souris
-document.addEventListener('mousemove', (event) => {
-    // Calculer la position relative de la souris (-1 à 1)
-    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-    mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+// Gestion des événements de la souris et du gyroscope
+let isMobile = window.innerWidth <= 768;
+
+if (isMobile) {
+    // Demande d'autorisation et initialisation du gyroscope
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 13+ nécessite une demande d'autorisation
+        document.addEventListener('click', async () => {
+            try {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            } catch (error) {
+                console.error('Erreur d\'accès au gyroscope:', error);
+            }
+        }, { once: true });
+    } else {
+        // Android et anciens iOS
+        window.addEventListener('deviceorientation', handleOrientation);
+    }
+} else {
+    // Version desktop : garde le contrôle à la souris
+    document.addEventListener('mousemove', (event) => {
+        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+        mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+        targetRotationY = -mouseX * 0.02;
+    });
+}
+
+function handleOrientation(event) {
+    // Conversion des angles du gyroscope en rotation
+    let x = event.beta; // [-180, 180]
+    let y = event.gamma; // [-90, 90]
     
-    // Mettre à jour la rotation cible (inversée)
-    targetRotationY = -mouseX * 0.02; // Facteur de sensibilité réduit
-});
+    // Normalisation des valeurs pour une rotation douce
+    targetRotationY = (y / 90) * 0.5; // Facteur de sensibilité réduit
+}
 
 // Gestion du survol du titre
 const mainTitle = document.getElementById('mainTitle');
@@ -162,7 +191,7 @@ function animate() {
     
     // Mise à jour de la progression seulement si l'animation a démarré
     if (animationStarted && animationProgress < 1) {
-        animationProgress += 0.0025; // Vitesse de l'animation réduite de moitié
+        animationProgress += 0.0025;
         edgeMeshes.forEach(mesh => {
             mesh.material.uniforms.progress.value = animationProgress;
         });
@@ -170,7 +199,7 @@ function animate() {
     
     // Lissage de la rotation
     if (modelGroup) {
-        currentRotationY += (targetRotationY - currentRotationY) * 0.05; // Facteur de lissage
+        currentRotationY += (targetRotationY - currentRotationY) * 0.05;
         modelGroup.rotation.y = currentRotationY;
         
         // Lissage de l'opacité
@@ -186,4 +215,10 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-animate(); 
+animate();
+
+// Gestion du redimensionnement
+window.addEventListener('resize', () => {
+    isMobile = window.innerWidth <= 768;
+    onWindowResize();
+}); 

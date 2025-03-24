@@ -22,29 +22,38 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Ajout des contrôles orbitaux
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.enabled = false; // Désactive les contrôles orbitaux
-
 // Position de la caméra
-camera.position.set(9.37, 0.27, 11.69); // Position exacte fournie
+camera.position.set(-9.5, -12.10, 15.70);
 camera.lookAt(0, 0, 0);
 
 // Ajout d'une lumière
 const light = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(light);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-directionalLight.position.set(0, 1, 0);
-scene.add(directionalLight);
+
+// Ajout de plusieurs lumières directionnelles pour un meilleur éclairage
+const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight1.position.set(1, 1, 1);
+scene.add(directionalLight1);
+
+const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+directionalLight2.position.set(-1, 1, -1);
+scene.add(directionalLight2);
+
+const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.4);
+directionalLight3.position.set(0, -1, 0);
+scene.add(directionalLight3);
+
+// Ajout d'une lumière hémisphérique pour l'ambiance
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+scene.add(hemiLight);
 
 // Création du matériau pour les arêtes avec shader
 const edgeMaterial = new THREE.ShaderMaterial({
     uniforms: {
         progress: { value: 0 },
         minY: { value: 0 },
-        maxY: { value: 0 }
+        maxY: { value: 0 },
+        depthInfluence: { value: 1.0 }
     },
     vertexShader: edgeVertexShader,
     fragmentShader: edgeFragmentShader,
@@ -56,7 +65,7 @@ const loader = new THREE.GLTFLoader();
 loader.load(
     'reconstitution.glb',
     function (gltf) {
-        modelGroup = gltf.scene; // Stocker le groupe du modèle
+        modelGroup = gltf.scene;
         
         // Calculer les limites du modèle
         const box = new THREE.Box3().setFromObject(gltf.scene);
@@ -70,25 +79,20 @@ loader.load(
         // Appliquer le mode wireframe à tous les meshes du modèle
         gltf.scene.traverse((child) => {
             if (child.isMesh) {
-                // Créer une géométrie d'arêtes à partir de la géométrie du mesh
                 const edgesGeometry = new THREE.EdgesGeometry(child.geometry, 15);
                 const edgesMesh = new THREE.LineSegments(edgesGeometry, edgeMaterial.clone());
                 
-                // Copier la transformation du mesh original
                 edgesMesh.position.copy(child.position);
                 edgesMesh.rotation.copy(child.rotation);
                 edgesMesh.scale.copy(child.scale);
                 
-                // Configurer le mesh original pour qu'il soit opaque
                 child.material.transparent = false;
                 child.material.opacity = 1;
                 child.material.color.setHex(0x808080);
                 
-                // Stocker les meshes pour les animations
                 meshes.push(child);
                 edgeMeshes.push(edgesMesh);
                 
-                // Ajouter les arêtes sans cacher le mesh original
                 child.parent.add(edgesMesh);
             }
         });
@@ -104,7 +108,7 @@ loader.load(
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = camera.fov * (Math.PI / 180);
         let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
-        camera.position.set(11.28, -1.37, 9.77); // Position exacte fournie
+        camera.position.set(-9.5, -12.40, 15.20);
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
 
@@ -116,7 +120,7 @@ loader.load(
         // Démarrer l'animation après un délai
         setTimeout(() => {
             animationStarted = true;
-        }, 400); // 2 secondes de délai
+        }, 400);
     },
     function (xhr) {
         console.log((xhr.loaded / xhr.total * 100) + '% chargé');
@@ -139,9 +143,7 @@ function onWindowResize() {
 let isMobile = window.innerWidth <= 768;
 
 if (isMobile) {
-    // Demande d'autorisation et initialisation du gyroscope
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS 13+ nécessite une demande d'autorisation
         document.addEventListener('click', async () => {
             try {
                 const permission = await DeviceOrientationEvent.requestPermission();
@@ -153,11 +155,9 @@ if (isMobile) {
             }
         }, { once: true });
     } else {
-        // Android et anciens iOS
         window.addEventListener('deviceorientation', handleOrientation);
     }
 } else {
-    // Version desktop : garde le contrôle à la souris
     document.addEventListener('mousemove', (event) => {
         mouseX = (event.clientX / window.innerWidth) * 2 - 1;
         mouseY = (event.clientY / window.innerHeight) * 2 - 1;
@@ -166,12 +166,9 @@ if (isMobile) {
 }
 
 function handleOrientation(event) {
-    // Conversion des angles du gyroscope en rotation
-    let x = event.beta; // [-180, 180]
-    let y = event.gamma; // [-90, 90]
-    
-    // Normalisation des valeurs pour une rotation douce
-    targetRotationY = (y / 90) * 0.5; // Facteur de sensibilité réduit
+    let x = event.beta;
+    let y = event.gamma;
+    targetRotationY = (y / 90) * 0.5;
 }
 
 // Gestion du survol du titre
@@ -187,9 +184,7 @@ mainTitle.addEventListener('mouseleave', () => {
 // Animation
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
     
-    // Mise à jour de la progression seulement si l'animation a démarré
     if (animationStarted && animationProgress < 1) {
         animationProgress += 0.0025;
         edgeMeshes.forEach(mesh => {
@@ -197,12 +192,10 @@ function animate() {
         });
     }
     
-    // Lissage de la rotation
     if (modelGroup) {
         currentRotationY += (targetRotationY - currentRotationY) * 0.05;
         modelGroup.rotation.y = currentRotationY;
         
-        // Lissage de l'opacité
         modelOpacity += (targetModelOpacity - modelOpacity) * 0.1;
         meshes.forEach(mesh => {
             mesh.material.opacity = modelOpacity;

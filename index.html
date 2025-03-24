@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proto Mysteriales</title>
+    <link rel="stylesheet" href="camera-controls.css">
     <style>
         body {
             margin: 0;
@@ -252,41 +253,26 @@
 </head>
 <body>
     <div id="overlay"></div>
-    <div id="mainTitle">
-        Mystériales<br>de Redon
-    </div>
+    <h1 id="mainTitle">MYSTERIALES</h1>
+    <div id="scrollArrow"></div>
     <div id="scrollArrowBackground"></div>
-    <div id="scrollArrow" onclick="toggleMenu()"></div>
-
     <div id="menu">
         <div class="menu-tabs">
-            <button class="menu-tab">Auteurs</button>
-            <button class="menu-tab">Exposants</button>
-            <button class="menu-tab">Agenda</button>
-            <button class="menu-tab">Pratique</button>
+            <button class="menu-tab" onclick="showFestivalImage()">Festival</button>
+            <button class="menu-tab" onclick="showReconstitution()">Reconstitution</button>
+            <button class="menu-tab" onclick="showCredits()">Crédits</button>
         </div>
         <div id="festivalImage">
-            <img src="./assets/mysteriales2025.png" alt="Festival Mystériales 2025">
+            <img src="assets/festival.jpg" alt="Festival">
         </div>
     </div>
 
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            const canvas = document.querySelector('canvas');
-            const mainTitle = document.getElementById('mainTitle');
-            menu.classList.toggle('active');
-            canvas.classList.add('model-hidden');
-            
-            if (window.innerWidth <= 768) {
-                mainTitle.classList.add('title-hidden');
-            }
-        }
-    </script>
-
+    <!-- Import de Three.js et ses dépendances -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Script principal -->
     <script type="module" src="script_animation.js"></script>
 </body>
 </html> 

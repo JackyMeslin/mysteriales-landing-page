@@ -1,0 +1,41 @@
+.camera-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 8px;
+    color: white;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+}
+
+.camera-controls h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.camera-controls .control-group {
+    margin-bottom: 10px;
+}
+
+.camera-controls label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.camera-controls input {
+    width: 100%;
+    margin-bottom: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.camera-controls .value-display {
+    font-size: 12px;
+    color: #aaa;
+} 

@@ -18,26 +18,29 @@ const vertexShader = `
 
 const fragmentShader = `
     uniform float progress;
+    uniform float depthInfluence; // Nouveau uniform pour contrôler l'effet de perspective
     varying vec3 vPosition;
     varying vec3 vWorldPosition;
     varying float vDepth;
 
     void main() {
-        // Calcul du centre de masse approximatif (peut être ajusté selon le modèle)
+        // Calcul du centre de masse approximatif
         float centerY = 0.0;
-        float distanceFromCenter = abs(vWorldPosition.y - centerY);
-        float maxDistance = 5.0; // Ajustez selon la taille de votre modèle
-        float normalizedDistance = distanceFromCenter / maxDistance;
+        float distanceFromCenter = vWorldPosition.y - centerY;
+        float maxDistance = 10.0;
+        float normalizedDistance = abs(distanceFromCenter) / maxDistance;
+        
+        // Ajustement de la profondeur avec le contrôle
+        float depthFactor = vDepth / (30.0 * depthInfluence);
         
         // Combiner la distance normalisée avec la profondeur
-        float depthFactor = vDepth / 20.0; // Ajuster ce facteur pour l'influence de la profondeur
-        float combinedProgress = mix(normalizedDistance, depthFactor, 0.5);
+        float combinedProgress = mix(normalizedDistance, depthFactor, 0.3);
         
         // Largeur de la transition
-        float transitionWidth = 0.2;
+        float transitionWidth = 0.3;
         
-        // Augmenter l'épaisseur des lignes
-        float lineWidth = 3.0; // Augmentation de l'épaisseur des lignes
+        // Épaisseur des lignes
+        float lineWidth = 3.0;
         
         // Inverser la logique pour que les lignes apparaissent progressivement
         float opacity = 1.0 - smoothstep(progress - transitionWidth, progress + transitionWidth, combinedProgress);

@@ -245,7 +245,8 @@ loadingScreen.id = 'loadingScreen';
 loadingScreen.innerHTML = `
     <div class="loading-content">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Chargement de la scène...</div>
+        <div class="loading-text">Veuillez patienter...</div>
+        <div class="loading-subtext">pendant le chargement de l'introduction</div>
         <div class="loading-progress">0%</div>
     </div>
 `;
@@ -283,14 +284,10 @@ style.textContent = `
         margin: 0 auto 20px;
     }
 
-    .loading-text {
+    .loading-text, .loading-subtext, .loading-progress {
         font-size: 1.2em;
         margin-bottom: 10px;
-    }
-
-    .loading-progress {
-        font-size: 1em;
-        opacity: 0.8;
+        opacity: 1;
     }
 
     @keyframes spin {
@@ -403,12 +400,14 @@ loader.load(
                 
                 // Masquer l'écran de chargement une fois tout chargé
                 loadingComplete = true;
-                hideLoadingScreen();
+                updateLoadingProgress(1); // S'assurer que la progression est à 100%
+                setTimeout(() => {
+                    hideLoadingScreen();
+                }, 500);
             },
             function (xhr) {
                 const progress = (xhr.loaded / xhr.total) * 0.5 + 0.5; // 50-100%
                 updateLoadingProgress(progress);
-                console.log((progress * 100) + '% du moine chargé');
             },
             function (error) {
                 console.error('Erreur lors du chargement du moine:', error);
@@ -423,7 +422,6 @@ loader.load(
     function (xhr) {
         const progress = (xhr.loaded / xhr.total) * 0.5; // 0-50%
         updateLoadingProgress(progress);
-        console.log((progress * 100) + '% chargé');
     },
     function (error) {
         console.error('Erreur lors du chargement du modèle:', error);
@@ -478,8 +476,8 @@ const MAX_ROTATION = 20 * (Math.PI / 180); // Conversion en radians
 function handleOrientation(event) {
     let x = event.beta;
     let y = event.gamma;
-    // Limiter la rotation à MAX_ROTATION
-    targetRotationY = Math.max(Math.min((y / 90) * 0.5, MAX_ROTATION), -MAX_ROTATION);
+    // Limiter la rotation à 20 degrés de chaque côté
+    targetRotationY = Math.max(Math.min((y / 90) * 0.5, 20 * (Math.PI / 180)), -20 * (Math.PI / 180));
 }
 
 // Animation

@@ -459,7 +459,7 @@ if (isMobile) {
     document.addEventListener('mousemove', (event) => {
         mouseX = (event.clientX / window.innerWidth) * 2 - 1;
         mouseY = (event.clientY / window.innerHeight) * 2 - 1;
-        targetRotationY = Math.max(Math.min(-mouseX * 0.02, 20 * (Math.PI / 180)), -20 * (Math.PI / 180));
+        targetRotationY = Math.max(Math.min(-mouseX * 0.02, 10 * (Math.PI / 180)), -10 * (Math.PI / 180));
     });
 }
 
@@ -471,13 +471,13 @@ document.addEventListener('touchmove', function(event) {
 }, { passive: false });
 
 // Limite de rotation en degrés
-const MAX_ROTATION = 20 * (Math.PI / 180); // Conversion en radians
+const MAX_ROTATION = 10 * (Math.PI / 180); // Conversion en radians
 
 function handleOrientation(event) {
     let x = event.beta;
     let y = event.gamma;
-    // Limiter la rotation à 20 degrés de chaque côté
-    targetRotationY = Math.max(Math.min((y / 90) * 0.5, 20 * (Math.PI / 180)), -20 * (Math.PI / 180));
+    // Limiter la rotation à 10 degrés de chaque côté
+    targetRotationY = Math.max(Math.min((y / 90) * 0.5, 10 * (Math.PI / 180)), -10 * (Math.PI / 180));
 }
 
 // Animation

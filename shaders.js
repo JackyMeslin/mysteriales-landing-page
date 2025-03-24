@@ -45,8 +45,8 @@ const fragmentShader = `
         // Inverser la logique pour que les lignes apparaissent progressivement
         float opacity = 1.0 - smoothstep(progress - transitionWidth, progress + transitionWidth, combinedProgress);
         
-        // Appliquer l'épaisseur des lignes
-        gl_FragColor = vec4(1.0, 1.0, 1.0, opacity * lineWidth);
+        // Appliquer l'épaisseur des lignes avec une couleur gris foncé
+        gl_FragColor = vec4(0.4, 0.4, 0.4, opacity * lineWidth);
     }
 `;
 

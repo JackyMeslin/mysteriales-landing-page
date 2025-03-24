@@ -1,5 +1,10 @@
+// Import de Three.js
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 // Import des shaders
 import { edgeVertexShader, edgeFragmentShader, progress } from './shaders.js';
+import { skyVertexShader, skyFragmentShader } from './skyShader.js';
 
 // Variables globales pour les animations
 let modelGroup; // Groupe contenant tout le modèle
@@ -24,22 +29,22 @@ document.body.appendChild(renderer.domElement);
 
 // Position de la caméra
 camera.position.set(-9.5, -12.10, 15.70);
-camera.lookAt(0, 0, 0);
+camera.lookAt(-2, -10, 0);
 
 // Ajout d'une lumière
 const light = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(light);
 
 // Ajout de plusieurs lumières directionnelles pour un meilleur éclairage
-const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.5);
 directionalLight1.position.set(1, 1, 1);
 scene.add(directionalLight1);
 
-const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
 directionalLight2.position.set(-1, 1, -1);
 scene.add(directionalLight2);
 
-const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.4);
+const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.5);
 directionalLight3.position.set(0, -1, 0);
 scene.add(directionalLight3);
 
@@ -60,8 +65,22 @@ const edgeMaterial = new THREE.ShaderMaterial({
     transparent: true
 });
 
+// Création du ciel étoilé
+const skyGeometry = new THREE.PlaneGeometry(100, 100);
+const skyMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        time: { value: 0 }
+    },
+    vertexShader: skyVertexShader,
+    fragmentShader: skyFragmentShader,
+    side: THREE.BackSide
+});
+const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+sky.position.z = -50;
+scene.add(sky);
+
 // Chargement du modèle GLB
-const loader = new THREE.GLTFLoader();
+const loader = new GLTFLoader();
 loader.load(
     'reconstitution.glb',
     function (gltf) {
@@ -108,8 +127,7 @@ loader.load(
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = camera.fov * (Math.PI / 180);
         let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
-        camera.position.set(-9.5, -12.40, 15.20);
-        camera.lookAt(0, 0, 0);
+        
         camera.updateProjectionMatrix();
 
         // Appliquer le zoom x4
@@ -171,19 +189,32 @@ function handleOrientation(event) {
     targetRotationY = (y / 90) * 0.5;
 }
 
-// Gestion du survol du titre
-const mainTitle = document.getElementById('mainTitle');
-mainTitle.addEventListener('mouseenter', () => {
-    targetModelOpacity = 0.3;
-});
+// Création de la lanterne avec des paramètres d'atténuation plus réalistes
+const lanternLight = new THREE.PointLight(0xffaa00, 2, 17.6);
+lanternLight.position.set(-20, -12.1, -5.9);
+// Configuration de l'atténuation pour un effet plus réaliste
+lanternLight.decay = 2; // Atténuation quadratique
+lanternLight.distance = 17.6; // Distance maximale d'éclairage
+scene.add(lanternLight);
 
-mainTitle.addEventListener('mouseleave', () => {
-    targetModelOpacity = 1;
-});
+// Variables pour l'animation de la lanterne
+let lanternStartPos = new THREE.Vector3(-20, -12.1, -5.9);
+let lanternEndPos = new THREE.Vector3(20, -12.1, -5.9);
+let lanternAnimationProgress = 0;
+let lanternAnimationSpeed = 0.001; // Vitesse de déplacement
+
+// Variables pour l'effet de flamme
+let flameTime = 0;
+const flameSpeed = 0.05;
+const flameIntensity = 0.5; // Variation d'intensité
+const baseIntensity = 2; // Intensité de base
 
 // Animation
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Mise à jour du temps pour le ciel étoilé
+    skyMaterial.uniforms.time.value += 0.01;
     
     if (animationStarted && animationProgress < 1) {
         animationProgress += 0.0025;
@@ -191,6 +222,26 @@ function animate() {
             mesh.material.uniforms.progress.value = animationProgress;
         });
     }
+
+    // Animation de la lanterne
+    if (lanternAnimationProgress < 1) {
+        lanternAnimationProgress += lanternAnimationSpeed;
+        const currentPos = new THREE.Vector3();
+        currentPos.lerpVectors(lanternStartPos, lanternEndPos, lanternAnimationProgress);
+        lanternLight.position.copy(currentPos);
+    } else {
+        // Réinitialiser l'animation pour créer une boucle
+        lanternAnimationProgress = 0;
+        // Inverser les positions de départ et d'arrivée
+        const temp = lanternStartPos.clone();
+        lanternStartPos.copy(lanternEndPos);
+        lanternEndPos.copy(temp);
+    }
+
+    // Effet de flamme
+    flameTime += flameSpeed;
+    const flameVariation = Math.sin(flameTime) * flameIntensity;
+    lanternLight.intensity = baseIntensity + flameVariation;
     
     if (modelGroup) {
         currentRotationY += (targetRotationY - currentRotationY) * 0.05;
@@ -214,4 +265,23 @@ animate();
 window.addEventListener('resize', () => {
     isMobile = window.innerWidth <= 768;
     onWindowResize();
+});
+
+// Gestion du survol du titre
+const mainTitle = document.getElementById('mainTitle');
+mainTitle.addEventListener('mouseenter', () => {
+    targetModelOpacity = 0.3;
+});
+
+mainTitle.addEventListener('mouseleave', () => {
+    targetModelOpacity = 1;
+});
+
+// Gestion du clic sur la flèche
+const scrollArrow = document.getElementById('scrollArrow');
+scrollArrow.addEventListener('click', () => {
+    window.scrollTo({
+        top: window.innerHeight,
+        behavior: 'smooth'
+    });
 }); 
